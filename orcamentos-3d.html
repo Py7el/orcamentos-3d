@@ -1,0 +1,619 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Orçamentos de Impressão 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma coluna, cards empilhados, formulário em grade responsiva */
+:root {
+  --bg: #f4f3f0;
+  --surface: #ffffff;
+  --fg: #1b1d21;
+  --muted: #5d626b;
+  --line: #d9d7d2;
+  --accent: #2a5c8a;
+  --accent-fg: #ffffff;
+  --ok: #2b7a4b;
+  --bad: #a33b3b;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a;
+    --surface: #1d2025;
+    --fg: #e8e9ec;
+    --muted: #9ca1a9;
+    --line: #353a43;
+    --accent: #7fb0de;
+    --accent-fg: #0f1620;
+    --ok: #6cc08b;
+    --bad: #e07a7a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a;
+  --surface: #1d2025;
+  --fg: #e8e9ec;
+  --muted: #9ca1a9;
+  --line: #353a43;
+  --accent: #7fb0de;
+  --accent-fg: #0f1620;
+  --ok: #6cc08b;
+  --bad: #e07a7a;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px;
+}
+
+.wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 20px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 20px;
+  min-width: 0;
+}
+h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; text-wrap: balance; }
+h2 { font-size: 16px; font-weight: 600; margin: 0 0 14px; }
+p { margin: 0; }
+.muted { color: var(--muted); font-size: 13px; }
+.num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.full { grid-column: 1 / -1; }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); min-width: 0; }
+
+input, select, textarea {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+textarea { min-height: 72px; resize: vertical; }
+input:focus, select:focus, textarea:focus, button:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button {
+  font: inherit;
+  font-size: 14px;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 500; }
+button.small { padding: 4px 10px; font-size: 13px; }
+button.danger-armed { color: var(--bad); border-color: var(--bad); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+.msg { font-size: 13px; min-height: 1.4em; margin-top: 10px; }
+.msg.err { color: var(--bad); }
+.msg.ok { color: var(--ok); }
+
+details summary { cursor: pointer; font-weight: 600; font-size: 16px; }
+details[open] summary { margin-bottom: 14px; }
+
+.split { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 720px) { .split { grid-template-columns: minmax(0, 1fr); } }
+
+dl.calc { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; margin: 0; font-size: 14px; }
+dl.calc dt { color: var(--muted); }
+dl.calc dd { margin: 0; text-align: right; }
+dl.calc .sep { grid-column: 1 / -1; border-top: 1px solid var(--line); margin: 4px 0; }
+.total { font-size: 26px; font-weight: 600; color: var(--accent); }
+
+.preview {
+  white-space: pre-wrap;
+  font-size: 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 14px;
+  min-height: 120px;
+  overflow-wrap: anywhere;
+}
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: 13px; }
+td.right, th.right { text-align: right; }
+td .sub { color: var(--muted); font-size: 12px; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+select.status { width: auto; padding: 4px 8px; font-size: 13px; }
+.empty { color: var(--muted); padding: 16px 0; font-size: 14px; }
+</style>
+
+<main class="wrap">
+
+  <header class="card">
+    <h1>Orçamentos de impressão 3D</h1>
+    <p class="muted">Ajuste os parâmetros, informe os dados da peça ou projeto e salve. Os dados ficam guardados neste navegador.</p>
+  </header>
+
+  <section class="card">
+    <details open>
+      <summary>Parâmetros de custo</summary>
+      <div class="grid">
+        <label class="full">Nome da empresa (aparece no orçamento)
+          <input id="p-nome" name="nome" type="text">
+        </label>
+        <label>Prefixo do orçamento
+          <input id="p-prefixo" name="prefixo" type="text">
+        </label>
+        <label>Potência média da impressora (kW)
+          <input id="p-potencia" name="potencia" type="number" step="0.01" min="0">
+        </label>
+        <label>Preço do kWh (R$)
+          <input id="p-kwh" name="kwh" type="number" step="0.01" min="0">
+        </label>
+        <label>Custo por hora da máquina (R$)
+          <input id="p-maquina" name="maquina" type="number" step="0.5" min="0">
+        </label>
+        <label>Mão de obra (R$/h)
+          <input id="p-mao" name="mao" type="number" step="1" min="0">
+        </label>
+        <label>Taxa de falha (%)
+          <input id="p-falha" name="falha" type="number" step="1" min="0">
+        </label>
+        <label>Margem de lucro (%)
+          <input id="p-margem" name="margem" type="number" step="1" min="0">
+        </label>
+        <label>Taxa do marketplace (%)
+          <input id="p-mkt" name="mkt" type="number" step="0.5" min="0" max="99">
+        </label>
+        <label>Validade do orçamento (dias)
+          <input id="p-validade" name="validade" type="number" step="1" min="1">
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="btn-defaults" class="small">Restaurar padrões</button>
+        <span class="muted">Alterações são salvas automaticamente.</span>
+      </div>
+      <div class="msg" id="msg-params"></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>Novo orçamento</h2>
+    <form id="form-orc" autocomplete="off">
+      <div class="grid">
+        <label>Cliente
+          <input name="cliente" type="text">
+        </label>
+        <label>Tipo
+          <select name="tipo">
+            <option value="Peça">Peça</option>
+            <option value="Projeto">Projeto</option>
+          </select>
+        </label>
+        <label>Material e cor
+          <input name="material" type="text" placeholder="Ex.: PLA preto">
+        </label>
+        <label>Preço do kg deste filamento (R$)
+          <input name="precoKg" type="number" step="0.01" min="0" inputmode="decimal">
+        </label>
+        <label>Gramas de filamento (0 se não se aplica)
+          <input name="gramas" type="number" step="0.1" min="0" inputmode="decimal">
+        </label>
+        <label>Horas de impressão (0 se não se aplica)
+          <input name="horasImp" type="number" step="0.1" min="0" inputmode="decimal">
+        </label>
+        <label>Horas de trabalho (modelagem, acabamento, atendimento)
+          <input name="horasTrab" type="number" step="0.1" min="0" inputmode="decimal">
+        </label>
+        <label class="full">Descrição
+          <textarea name="descricao"></textarea>
+        </label>
+      </div>
+    </form>
+
+    <div class="split" style="margin-top:20px">
+      <div>
+        <h2>Composição do custo</h2>
+        <dl class="calc">
+          <dt>Material (com falha)</dt><dd class="num" id="out-material">-</dd>
+          <dt>Energia</dt><dd class="num" id="out-energia">-</dd>
+          <dt>Máquina</dt><dd class="num" id="out-maquina">-</dd>
+          <dt>Mão de obra</dt><dd class="num" id="out-trabalho">-</dd>
+          <span class="sep"></span>
+          <dt>Custo total</dt><dd class="num" id="out-custo">-</dd>
+          <dt>Preço final</dt><dd class="num total" id="out-preco">-</dd>
+        </dl>
+        <div class="msg" id="msg-form"></div>
+      </div>
+      <div>
+        <h2>Texto para o cliente</h2>
+        <p class="muted">Não inclui custo nem margem.</p>
+        <div class="preview" id="texto"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="btn-salvar" class="primary">Salvar orçamento</button>
+      <button type="button" id="btn-copiar">Copiar texto</button>
+      <button type="button" id="btn-limpar">Limpar campos</button>
+    </div>
+    <div class="msg" id="msg-salvar"></div>
+  </section>
+
+  <section class="card">
+    <h2>Histórico</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Data</th>
+            <th>Cliente</th>
+            <th class="right">Preço</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="historico"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="historico-vazio" hidden>Nenhum orçamento salvo ainda.</p>
+  </section>
+
+</main>
+
+<script>
+const DEFAULTS = {
+  nome: 'Empresa de Impressão 3D',
+  prefixo: 'ORC',
+  potencia: 0.2,
+  kwh: 0.9,
+  maquina: 3,
+  mao: 40,
+  falha: 10,
+  margem: 40,
+  mkt: 0,
+  validade: 7
+};
+const CHAVE_PARAMS = 'orc3d.params';
+const CHAVE_HIST = 'orc3d.historico';
+const CHAVE_SEQ = 'orc3d.seq';
+const STATUS = ['Pendente', 'Aceito', 'Recusado'];
+
+const $ = id => document.getElementById(id);
+
+function lerStorage(chave, padrao) {
+  try {
+    const v = localStorage.getItem(chave);
+    return v === null ? padrao : JSON.parse(v);
+  } catch (e) {
+    return padrao;
+  }
+}
+
+function gravarStorage(chave, valor) {
+  try {
+    localStorage.setItem(chave, JSON.stringify(valor));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+let params = Object.assign({}, DEFAULTS, lerStorage(CHAVE_PARAMS, {}));
+let historico = lerStorage(CHAVE_HIST, []);
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function fmt(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtData(d) {
+  return d.toLocaleDateString('pt-BR');
+}
+
+function ymd(d) {
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+
+function arred(v) {
+  return Math.round(v * 100) / 100;
+}
+
+function num(v) {
+  return Number(String(v).replace(',', '.'));
+}
+
+function mostrarMsg(id, texto, tipo) {
+  const el = $(id);
+  el.textContent = texto || '';
+  el.className = 'msg' + (tipo ? ' ' + tipo : '');
+}
+
+/* Parâmetros */
+
+function preencherParametros() {
+  Object.keys(DEFAULTS).forEach(k => { $('p-' + k).value = params[k]; });
+}
+
+function lerParametrosDosCampos() {
+  const p = {};
+  Object.keys(DEFAULTS).forEach(k => {
+    const v = $('p-' + k).value;
+    p[k] = (k === 'nome' || k === 'prefixo') ? v.trim() : num(v);
+  });
+  return p;
+}
+
+function validarParametros(p) {
+  if (!p.nome) return 'Informe o nome da empresa.';
+  if (!p.prefixo) return 'Informe o prefixo do orçamento.';
+  const campos = ['potencia', 'kwh', 'maquina', 'mao', 'falha', 'margem', 'mkt', 'validade'];
+  for (const k of campos) {
+    if (!isFinite(p[k]) || p[k] < 0) return 'Valor inválido em ' + k + '.';
+  }
+  if (p.mkt >= 100) return 'A taxa do marketplace deve ser menor que 100%.';
+  if (p.validade < 1) return 'A validade deve ser de pelo menos 1 dia.';
+  return null;
+}
+
+function onParametroAlterado() {
+  const novo = lerParametrosDosCampos();
+  const erro = validarParametros(novo);
+  if (erro) {
+    mostrarMsg('msg-params', erro, 'err');
+    return;
+  }
+  params = novo;
+  const ok = gravarStorage(CHAVE_PARAMS, params);
+  mostrarMsg('msg-params', ok ? 'Parâmetros salvos.' : 'Não foi possível salvar neste navegador. Os valores valem só nesta sessão.', ok ? 'ok' : 'err');
+  atualizarCalculo();
+}
+
+/* Formulário e cálculo */
+
+function lerFormulario() {
+  const f = $('form-orc');
+  const texto = (nome, rotulo) => {
+    const v = f.elements[nome].value.trim();
+    if (!v) throw new Error('Preencha: ' + rotulo + '.');
+    return v;
+  };
+  const numero = (nome, rotulo) => {
+    const raw = f.elements[nome].value.trim();
+    if (raw === '') throw new Error('Preencha: ' + rotulo + '.');
+    const v = num(raw);
+    if (!isFinite(v) || v < 0) throw new Error('Valor inválido em ' + rotulo + '.');
+    return v;
+  };
+  return {
+    cliente: texto('cliente', 'Cliente'),
+    tipo: f.elements.tipo.value,
+    material: texto('material', 'Material e cor'),
+    precoKg: numero('precoKg', 'Preço do kg'),
+    descricao: texto('descricao', 'Descrição'),
+    gramas: numero('gramas', 'Gramas de filamento'),
+    horasImp: numero('horasImp', 'Horas de impressão'),
+    horasTrab: numero('horasTrab', 'Horas de trabalho')
+  };
+}
+
+function calcular(d) {
+  const erro = validarParametros(params);
+  if (erro) throw new Error(erro);
+  const material = (d.gramas / 1000) * d.precoKg * (1 + params.falha / 100);
+  const energia = d.horasImp * params.potencia * params.kwh;
+  const maquina = d.horasImp * params.maquina;
+  const trabalho = d.horasTrab * params.mao;
+  const custo = material + energia + maquina + trabalho;
+  const preco = custo * (1 + params.margem / 100) / (1 - params.mkt / 100);
+  return {
+    material: arred(material),
+    energia: arred(energia),
+    maquina: arred(maquina),
+    trabalho: arred(trabalho),
+    custo: arred(custo),
+    preco: arred(preco)
+  };
+}
+
+function textoOrcamento(d, c, id, emissao, validade) {
+  const linhas = [
+    params.nome,
+    id ? 'Orçamento ' + id : 'Orçamento',
+    'Cliente: ' + d.cliente,
+    'Data de emissão: ' + fmtData(emissao),
+    'Válido até: ' + fmtData(validade),
+    '',
+    'Tipo: ' + d.tipo,
+    'Material: ' + d.material,
+    'Descrição: ' + d.descricao,
+    '',
+    'Total: ' + fmt(c.preco),
+    '',
+    'Prazo de produção e condições de pagamento a combinar.'
+  ];
+  return linhas.join('\n');
+}
+
+const SAIDAS = ['material', 'energia', 'maquina', 'trabalho', 'custo', 'preco'];
+
+function limparSaidas() {
+  SAIDAS.forEach(k => { $('out-' + k).textContent = '-'; });
+  $('texto').textContent = '';
+}
+
+function atualizarCalculo() {
+  try {
+    const d = lerFormulario();
+    const c = calcular(d);
+    SAIDAS.forEach(k => { $('out-' + k).textContent = fmt(c[k]); });
+    $('texto').textContent = textoOrcamento(d, c, null, new Date(), new Date(Date.now() + params.validade * 86400000));
+    mostrarMsg('msg-form', '');
+  } catch (err) {
+    limparSaidas();
+    mostrarMsg('msg-form', err.message, 'err');
+  }
+}
+
+function limparFormulario() {
+  const f = $('form-orc');
+  f.reset();
+  f.elements.tipo.value = 'Peça';
+  atualizarCalculo();
+}
+
+function salvarOrcamento() {
+  try {
+    const d = lerFormulario();
+    const c = calcular(d);
+    const hoje = new Date();
+    const validade = new Date(hoje.getTime() + params.validade * 86400000);
+    const seq = lerStorage(CHAVE_SEQ, 0) + 1;
+    const id = params.prefixo + '-' + ymd(hoje) + '-' + String(seq).padStart(3, '0');
+
+    const registro = Object.assign({}, d, c, {
+      id: id,
+      data: hoje.toISOString(),
+      validade: validade.toISOString(),
+      status: 'Pendente',
+      texto: textoOrcamento(d, c, id, hoje, validade)
+    });
+    historico.unshift(registro);
+
+    const okHist = gravarStorage(CHAVE_HIST, historico);
+    gravarStorage(CHAVE_SEQ, seq);
+    renderHistorico();
+    limparFormulario();
+    mostrarMsg('msg-salvar', okHist ? 'Orçamento ' + id + ' salvo.' : 'Orçamento criado, mas não foi possível gravar no navegador.', okHist ? 'ok' : 'err');
+  } catch (err) {
+    mostrarMsg('msg-salvar', err.message, 'err');
+  }
+}
+
+async function copiarTexto(texto, msgId) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    mostrarMsg(msgId, 'Texto copiado.', 'ok');
+  } catch (e) {
+    mostrarMsg(msgId, 'Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.', 'err');
+  }
+}
+
+/* Histórico */
+
+function renderHistorico() {
+  const corpo = $('historico');
+  $('historico-vazio').hidden = historico.length > 0;
+  corpo.innerHTML = historico.map((r, i) => {
+    const data = new Date(r.data).toLocaleDateString('pt-BR');
+    const opcoes = STATUS.map(s => '<option' + (s === r.status ? ' selected' : '') + '>' + s + '</option>').join('');
+    return '<tr>' +
+      '<td class="num">' + esc(r.id) + '</td>' +
+      '<td>' + data + '</td>' +
+      '<td>' + esc(r.cliente) + '<div class="sub">' + esc(r.tipo) + ' · ' + esc(r.material) + '</div></td>' +
+      '<td class="right num">' + fmt(r.preco) + '</td>' +
+      '<td><select class="status" data-i="' + i + '" aria-label="Status do orçamento ' + esc(r.id) + '">' + opcoes + '</select></td>' +
+      '<td><div class="row-actions">' +
+        '<button type="button" class="small" data-acao="copiar" data-i="' + i + '">Copiar</button>' +
+        '<button type="button" class="small" data-acao="excluir" data-i="' + i + '">Excluir</button>' +
+      '</div></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function onHistoricoClick(e) {
+  const btn = e.target.closest('button[data-acao]');
+  if (!btn) return;
+  const i = Number(btn.dataset.i);
+  const r = historico[i];
+  if (!r) return;
+
+  if (btn.dataset.acao === 'copiar') {
+    copiarTexto(r.texto, 'msg-salvar');
+    return;
+  }
+
+  if (btn.dataset.acao === 'excluir') {
+    if (btn.dataset.armed !== 'sim') {
+      btn.dataset.armed = 'sim';
+      btn.textContent = 'Confirmar exclusão';
+      btn.classList.add('danger-armed');
+      return;
+    }
+    historico.splice(i, 1);
+    gravarStorage(CHAVE_HIST, historico);
+    renderHistorico();
+    mostrarMsg('msg-salvar', 'Orçamento ' + r.id + ' excluído.', 'ok');
+  }
+}
+
+function onStatusAlterado(e) {
+  const sel = e.target.closest('select.status');
+  if (!sel) return;
+  const r = historico[Number(sel.dataset.i)];
+  if (!r) return;
+  r.status = sel.value;
+  gravarStorage(CHAVE_HIST, historico);
+}
+
+/* Inicialização */
+
+function iniciar() {
+  preencherParametros();
+  renderHistorico();
+  limparSaidas();
+
+  Object.keys(DEFAULTS).forEach(k => {
+    $('p-' + k).addEventListener('input', onParametroAlterado);
+  });
+
+  $('btn-defaults').addEventListener('click', () => {
+    params = Object.assign({}, DEFAULTS);
+    gravarStorage(CHAVE_PARAMS, params);
+    preencherParametros();
+    mostrarMsg('msg-params', 'Padrões restaurados.', 'ok');
+    atualizarCalculo();
+  });
+
+  $('form-orc').addEventListener('input', atualizarCalculo);
+  $('form-orc').addEventListener('change', atualizarCalculo);
+  $('form-orc').addEventListener('submit', e => e.preventDefault());
+
+  $('btn-salvar').addEventListener('click', salvarOrcamento);
+  $('btn-limpar').addEventListener('click', limparFormulario);
+  $('btn-copiar').addEventListener('click', () => {
+    const texto = $('texto').textContent;
+    if (!texto) {
+      mostrarMsg('msg-salvar', 'Preencha os campos antes de copiar.', 'err');
+      return;
+    }
+    copiarTexto(texto, 'msg-salvar');
+  });
+
+  $('historico').addEventListener('click', onHistoricoClick);
+  $('historico').addEventListener('change', onStatusAlterado);
+
+  atualizarCalculo();
+}
+
+iniciar();
+</script>
